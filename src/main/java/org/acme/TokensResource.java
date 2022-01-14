@@ -8,9 +8,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -64,21 +62,7 @@ public class TokensResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String generate() throws Exception {
 
-
-		JWTClaimsSet.Builder claimsSet = new JWTClaimsSet.Builder();
-		claimsSet.issuer("Issuer Claim");
-		claimsSet.subject("JWE-Authentication-Example");
-
-		//User specified claims
-		claimsSet.claim("appId", "230919131512092005");
-		claimsSet.claim("userId", "4431d8dc-2f69-4057-9b83-a59385d18c03");
-		claimsSet.claim("groups", Arrays.asList("Admin", "User"));
-		claimsSet.claim("applicationType", "App");
-		claimsSet.claim("clientRemoteAddress", "192.168.1.3");
-		
-		claimsSet.expirationTime(new Date(new Date().getTime() + 1000 * 60 * 10));
-		claimsSet.notBeforeTime(new Date());
-		claimsSet.jwtID(UUID.randomUUID().toString());
+		JWTClaimsSet.Builder claimsSet = createClaimSet();
 
 		System.out.println("Claim Set : \n" + claimsSet.build());
 
@@ -101,6 +85,25 @@ public class TokensResource {
 		return jwtString;
     }
 
+    private JWTClaimsSet.Builder createClaimSet() {
+        JWTClaimsSet.Builder claimsSet = new JWTClaimsSet.Builder();
+		claimsSet.issuer("Issuer Claim");
+		claimsSet.subject("JWE-Authentication-Example");
+
+		//User specified claims
+		claimsSet.claim("appId", "230919131512092005");
+		claimsSet.claim("userId", "4431d8dc-2f69-4057-9b83-a59385d18c03");
+		claimsSet.claim("groups", Arrays.asList("Admin", "User"));
+		claimsSet.claim("applicationType", "App");
+		claimsSet.claim("clientRemoteAddress", "192.168.1.3");
+		
+		claimsSet.expirationTime(new Date(new Date().getTime() + 1000 * 60 * 10));
+		claimsSet.notBeforeTime(new Date());
+		claimsSet.jwtID(UUID.randomUUID().toString());
+        return claimsSet;
+    }
+
+    //TODO remover depois do introspect estar OK!
     @GET
     @Path("/decrypt/jwe")
     @Produces(MediaType.TEXT_PLAIN)
@@ -118,23 +121,21 @@ public class TokensResource {
         return jwt.getPayload().toBase64URL().decodeToString();
     }
 
+    //TODO read the token
     @POST
     @Path("/introspect")
     @Produces(MediaType.APPLICATION_JSON)
     public Map<String, Object> decrypt() throws Exception {
-        JWTClaimsSet.Builder claimsSet = new JWTClaimsSet.Builder();
-		
-		claimsSet.expirationTime(new Date(new Date().getTime() + 1000 * 60 * 10));
-		claimsSet.notBeforeTime(new Date());
-        claimsSet.issueTime(new Date());
-        claimsSet.audience("Custom Aud");
-		claimsSet.claim("active", true);
-
-        Map<String, String> permissions = new HashMap<>();
-        permissions.put("resource_id", "90ccc6fc-b296-4cd1-881e-089e1ee15957");
-        permissions.put("resource_name", "Hello World Resource");
-        claimsSet.claim("permissions", Collections.singletonList(permissions));
-		
+        JWTClaimsSet.Builder claimsSet = createClaimSet();
         return claimsSet.build().toJSONObject(false);
     }
+
+    //TODO read the token
+    @GET
+    @Path("/introspect")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Map<String, Object> decryptGET() throws Exception {
+        return decrypt();
+    }
+    
 }
