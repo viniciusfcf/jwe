@@ -9,9 +9,11 @@ import java.security.spec.RSAPrivateKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
 
+import javax.inject.Inject;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -27,8 +29,13 @@ import com.nimbusds.jose.crypto.RSAEncrypter;
 import com.nimbusds.jwt.EncryptedJWT;
 import com.nimbusds.jwt.JWTClaimsSet;
 
-@Path("/tokens")
+import org.jboss.logging.Logger;
+
+@Path("/token")
 public class TokensResource {
+
+    @Inject
+    Logger logger;
 
     private static RSAPublicKey publicRsaKey;
     private static RSAPrivateKey privateRsaKey;
@@ -58,13 +65,10 @@ public class TokensResource {
     }
 
     @GET
-    @Path("/jwe")
     @Produces(MediaType.TEXT_PLAIN)
     public String generate() throws Exception {
 
 		JWTClaimsSet.Builder claimsSet = createClaimSet();
-
-		System.out.println("Claim Set : \n" + claimsSet.build());
 
 		// Create the JWE header and specify:
 		// RSA-OAEP as the encryption algorithm
@@ -103,13 +107,14 @@ public class TokensResource {
         return claimsSet;
     }
 
-    //TODO remover depois do introspect estar OK!
-    @GET
-    @Path("/decrypt/jwe")
-    @Produces(MediaType.TEXT_PLAIN)
-    public String decrypt(@QueryParam("token") String token) throws Exception {
-    
-		// In order to read back the data from the token using your private RSA key:
+
+    @POST
+    @Path("/introspect")
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
+    @Produces(MediaType.APPLICATION_JSON)
+    public String introspect(@FormParam("token") String token) throws Exception {
+        logger.infof("introspect: %s", token);
+        // In order to read back the data from the token using your private RSA key:
 		// parse the JWT text string using EncryptedJWT object
 		EncryptedJWT jwt = EncryptedJWT.parse(token);
 
@@ -121,21 +126,11 @@ public class TokensResource {
         return jwt.getPayload().toBase64URL().decodeToString();
     }
 
-    //TODO read the token
-    @POST
-    @Path("/introspect")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Object> decrypt() throws Exception {
-        JWTClaimsSet.Builder claimsSet = createClaimSet();
-        return claimsSet.build().toJSONObject(false);
-    }
-
-    //TODO read the token
     @GET
     @Path("/introspect")
     @Produces(MediaType.APPLICATION_JSON)
-    public Map<String, Object> decryptGET() throws Exception {
-        return decrypt();
+    public String decryptGET(@QueryParam("token") String token) throws Exception {
+        return introspect(token);
     }
     
 }

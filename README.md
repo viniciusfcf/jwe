@@ -1,5 +1,16 @@
 # jwe Project
 
+Este projeto simula um Keycloak.
+
+Contém os endpoints:
+1. /token (gera um token JWE)
+1. /introspect (valida o token e o retorna em formato JSON)
+
+*MUITO IMPORTANTE: *
+1. SE FIZER DEPLOY EM UM K8S, UTILIZE APENAS UMA RÉPLICA, POIS O PAR DE CHAVES SERÁ DIFERENTE PARA CADA INSTÂNCIA E GERARÁ PROBLEMAS NO INTROSPECT.
+1. O MESMO VALE PARA REINICIALIZAÇÃO DA ÚNICA INSTÂNCIA, NOVAS CHAVES SERÃO GERADAS E O INTROSPECT DE TOKENS GERADOS ANTES DO REINÍCIO IRÃO FALHAR.
+
+
 This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
 If you want to learn more about Quarkus, please visit its website: https://quarkus.io/ .
