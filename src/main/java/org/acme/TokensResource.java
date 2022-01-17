@@ -24,6 +24,7 @@ import javax.ws.rs.core.MediaType;
 import com.nimbusds.jose.EncryptionMethod;
 import com.nimbusds.jose.JWEAlgorithm;
 import com.nimbusds.jose.JWEHeader;
+import com.nimbusds.jose.Payload;
 import com.nimbusds.jose.crypto.RSADecrypter;
 import com.nimbusds.jose.crypto.RSAEncrypter;
 import com.nimbusds.jwt.EncryptedJWT;
@@ -95,6 +96,7 @@ public class TokensResource {
 		claimsSet.subject("JWE-Authentication-Example");
 
 		//User specified claims
+        claimsSet.claim("active", true);
 		claimsSet.claim("appId", "230919131512092005");
 		claimsSet.claim("userId", "4431d8dc-2f69-4057-9b83-a59385d18c03");
 		claimsSet.claim("groups", Arrays.asList("Admin", "User"));
@@ -112,8 +114,13 @@ public class TokensResource {
     @Path("/introspect")
     @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    public String introspect(@FormParam("token") String token) throws Exception {
+    public String introspect(@FormParam("token") String token, @QueryParam("mock") boolean mock) throws Exception {
         logger.infof("introspect: %s", token);
+        logger.infof("mock: %s", mock);
+        if(mock) {
+            JWTClaimsSet.Builder claimsSet = createClaimSet();
+            return claimsSet.build().toString();
+        }
         // In order to read back the data from the token using your private RSA key:
 		// parse the JWT text string using EncryptedJWT object
 		EncryptedJWT jwt = EncryptedJWT.parse(token);
@@ -123,14 +130,15 @@ public class TokensResource {
 
 		// Doing the decryption
 		jwt.decrypt(decrypter);
-        return jwt.getPayload().toBase64URL().decodeToString();
+        Payload payload = jwt.getPayload();
+        return payload.toBase64URL().decodeToString();
     }
 
     @GET
     @Path("/introspect")
     @Produces(MediaType.APPLICATION_JSON)
-    public String decryptGET(@QueryParam("token") String token) throws Exception {
-        return introspect(token);
+    public String decryptGET(@QueryParam("token") String token, @QueryParam("mock") boolean mock) throws Exception {
+        return introspect(token, mock);
     }
     
 }
